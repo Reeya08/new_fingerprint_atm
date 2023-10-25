@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "23443083020",
+    "project_id": "atmapp-df541",
+    "storage_bucket": "atmapp-df541.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:23443083020:android:8374459171925f6050c329",
+        "android_client_info": {
+          "package_name": "com.example.new_fingerprint_atm"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAt3MHsqOld0qEFlxzHw1e2hu62z_jiSXk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
