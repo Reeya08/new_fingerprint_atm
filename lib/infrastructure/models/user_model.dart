@@ -26,7 +26,6 @@ class UserModel {
     this.email,  // Initialize the email field
     this.blocked = false,
   });
-
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
     userId: json["user_id"],
     name: json["name"],

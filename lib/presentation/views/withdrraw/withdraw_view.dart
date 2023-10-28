@@ -1,8 +1,13 @@
  import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:new_fingerprint_atm/presentation/views/login/login_view.dart';
 import '../../../infrastructure/models/transaction_model.dart';
+import '../../../infrastructure/preferences/store_account_number_and_pin.dart';
 import '../home/home_view.dart';
+import '../pin_input/pin_input_view.dart';
 
 
 
@@ -16,6 +21,50 @@ import '../home/home_view.dart';
     final TextEditingController withdrawalAmountController = TextEditingController();
     String? withdrawalMessage;
 
+    Future<void> authenticateUser() async {
+      bool authenticated = false;
+      final LocalAuthentication _localAuthentication = LocalAuthentication();
+
+      try {
+        authenticated = await _localAuthentication.authenticate(
+          localizedReason: "Scan your finger to authenticate",
+        );
+      } on PlatformException catch (e) {
+        print(e);
+      }
+
+      if (authenticated) {
+        final snackBar = SnackBar(content: Text("Authentication Successful"));
+        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+
+        // Retrieve user email and password from shared preferences
+        final userData = await UserDataStorage.getUserEmailAndPassword();
+        final email = userData[UserDataStorage.emailKey];
+        final password = userData[UserDataStorage.passwordKey];
+
+        if (email != null && password != null) {
+          try {
+            await FirebaseAuth.instance.signInWithEmailAndPassword(
+              email: email,
+              password: password,
+            );
+
+            // If authentication is successful, navigate to the PinInputScreen
+            Navigator.push(context, MaterialPageRoute(builder: (context) => WithdrawScreen()));
+          } catch (e) {
+            final snackBar = SnackBar(content: Text("Authentication failed: $e"));
+            ScaffoldMessenger.of(context).showSnackBar(snackBar);
+          }
+        } else {
+          // Handle the case where email and password are not found in shared preferences
+          final snackBar = SnackBar(content: Text("User data not found"));
+          ScaffoldMessenger.of(context).showSnackBar(snackBar);
+        }
+      } else {
+        final snackbar = SnackBar(content: Text("Authentication failed"));
+        ScaffoldMessenger.of(context).showSnackBar(snackbar);
+      }
+    }
     @override
     Widget build(BuildContext context) {
       return Scaffold(
@@ -117,7 +166,10 @@ import '../home/home_view.dart';
                 width: double.infinity,
                 child: ElevatedButton(
                  onPressed: (){
-                   withdrawCash().then((value) {
+                   authenticateUser().then((value){
+                     withdrawCash();
+                   })
+                .then((value) {
                      final snackbar = SnackBar(content: Text("Transaction Successfull"));
                      ScaffoldMessenger.of(context).showSnackBar(snackbar);
                    })..then((value){

@@ -34,7 +34,7 @@ class UserServices {
       DocumentSnapshot userSnapshot = await _firestore.collection('users').doc(userId).get();
 
       if (userSnapshot.exists) {
-        // Convert the Firestore data to a UserModel object or use the appropriate model for your data structure.
+        // Convert the Firestore data to a UserModel object ]
         UserModel user = UserModel.fromJson(userSnapshot.data() as Map<String, dynamic>);
         return user;
       } else {
