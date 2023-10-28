@@ -1,8 +1,12 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:new_fingerprint_atm/infrastructure/services/auth_services.dart';
+import 'package:new_fingerprint_atm/presentation/views/login/login_view.dart';
+
 import '../../../infrastructure/models/user_model.dart';
+import '../../../infrastructure/preferences/store_account_number_and_pin.dart';
+import '../../../infrastructure/services/auth_services.dart';
+import '../../../infrastructure/services/user_services.dart';
 
 class SignUpScreen extends StatefulWidget {
   @override
@@ -13,10 +17,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   final UserModel userModel = UserModel();
   final TextEditingController nameController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
   final TextEditingController accountNumberController = TextEditingController();
-  final TextEditingController pinController = TextEditingController();
+  final TextEditingController atmPinController = TextEditingController();
+  final TextEditingController loginPasswordController = TextEditingController();
   final TextEditingController balanceController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final UserServices _userServices = UserServices();
 
   final OutlineInputBorder textInputBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(18.0),
@@ -52,7 +58,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     return null;
                   },
                 ),
-                SizedBox(height: 10,),
+                SizedBox(
+                  height: 10,
+                ),
                 TextFormField(
                   controller: emailController,
                   decoration: InputDecoration(
@@ -70,7 +78,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     return null;
                   },
                 ),
-                SizedBox(height: 10,),
+                SizedBox(
+                  height: 10,
+                ),
                 TextFormField(
                   controller: accountNumberController,
                   decoration: InputDecoration(
@@ -87,12 +97,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     }
                     return null;
                   },
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(14),
+                  ],
                 ),
-                SizedBox(height: 10,),
+                SizedBox(
+                  height: 10,
+                ),
                 TextFormField(
-                  controller: pinController,
+                  controller: loginPasswordController,
                   decoration: InputDecoration(
-                    labelText: 'PIN (4 digits)',
+                    labelText: 'Login Password (6 digits)',
                     enabledBorder: textInputBorder,
                     focusedBorder: textInputBorder,
                   ),
@@ -101,14 +117,41 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your PIN';
                     }
-                    if (value.length != 4 || !isNumeric(value)) {
-                      return 'PIN must be 4 digits with no characters';
+                    if (value.length != 6) {
+                      return 'password must be 6 characters';
                     }
                     return null;
                   },
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
-                SizedBox(height: 10,),
+                SizedBox(
+                  height: 10,
+                ),
+                TextFormField(
+                  controller: atmPinController,
+                  decoration: InputDecoration(
+                    labelText: 'ATM PIN (4 digits)',
+                    enabledBorder: textInputBorder,
+                    focusedBorder: textInputBorder,
+                  ),
+                  obscureText: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your PIN';
+                    }
+                    if (value.length != 4) {
+                      return 'password must be 4 characters';
+                    }
+                    return null;
+                  },
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(4),
+                  ],
+                ),
+                SizedBox(
+                  height: 10,
+                ),
                 TextFormField(
                   controller: balanceController,
                   decoration: InputDecoration(
@@ -124,20 +167,87 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     return null;
                   },
                 ),
-                SizedBox(height: 10,),
+                SizedBox(
+                  height: 10,
+                ),
                 SizedBox(height: 20),
                 Container(
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xff394867),
-                      foregroundColor: Colors.white,
+                      onPrimary: Colors.white,
                     ),
                     onPressed: () {
-                      AuthServices().signUp(email: emailController.text, password: pinController.text).then((value) {    signUpUser();}).then((value) {
-                        showSuccessMessageAndNavigateBack();
-                      });
+                      if (_formKey.currentState!.validate()) {
+                        AuthServices()
+                            .signUp(
+                          email: emailController.text,
+                          password: loginPasswordController.text,
+                        )
+                            .then((UserCredential userCredential) {
+                          User? user = userCredential
+                              .user; // Make sure you define 'User' here
 
+                          if (user != null) {
+                            UserModel userModel = UserModel(
+                              userId: user.uid,
+                              pin: atmPinController.text,
+                              name: nameController.text,
+                              accountNumber: accountNumberController.text,
+                              balance: balanceController.text,
+                              email: emailController.text,
+                              blocked: false,
+                            );
+                            _userServices.addUser(userModel);
+                          }
+                          // Save user email and password in shared preferences
+                          UserDataStorage.saveUserEmailAndPassword(
+                              emailController.text,
+                              loginPasswordController.text);
+                        }).then((value) {
+                          showDialog(
+                              context: context,
+                              builder: (context) {
+                                nameController.clear();
+                                emailController.clear();
+                                balanceController.clear();
+                                accountNumberController.clear();
+                                atmPinController.clear();
+                                loginPasswordController.clear();
+                                FocusManager.instance.primaryFocus!.unfocus();
+                                return AlertDialog(
+                                  content: Text('Sign Up Successfully'),
+                                  actions: [
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (context) =>
+                                                    LoginView()));
+                                      },
+                                      child: Text("oK"),
+                                    ),
+                                  ],
+                                );
+                              });
+                        }).onError((error, stackTrace) {
+                          showDialog(
+                              context: context,
+                              builder: (context) {
+                                nameController.clear();
+                                emailController.clear();
+                                accountNumberController.clear();
+                                loginPasswordController.clear();
+                                atmPinController.clear();
+                                balanceController.clear();
+                                return AlertDialog(
+                                  content: Text(error.toString()),
+                                );
+                              });
+                        });
+                      }
                     },
                     child: Text('Sign Up'),
                   ),
@@ -150,55 +260,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
+  bool isEmail(String? value) {
+    if (value == null) {
+      return false;
+    }
+    final emailPattern = RegExp(r'^[\w-]+(\.[\w-]+)*@[\w-]+(\.[\w-]+)+$');
+    return emailPattern.hasMatch(value);
+  }
+
   bool isNumeric(String? value) {
     if (value == null) {
       return false;
     }
     return int.tryParse(value) != null;
-  }
-
-  bool isEmail(String? value) {
-    if (value == null) {
-      return false;
-    }
-    final emailPattern = RegExp(
-      r'^[\w-]+(\.[\w-]+)*@[\w-]+(\.[\w-]+)+$',
-    );
-
-    return emailPattern.hasMatch(value);
-  }
-
-  void signUpUser() async {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      try {
-        await AuthServices().signUp(
-          email: emailController.text,
-          password: pinController.text, // Using the PIN as the password in this example
-        );
-        await FirebaseFirestore.instance.collection('users').add({
-          'accountNumber': userModel.accountNumber,
-          'pin': userModel.pin,
-          'balance': userModel.balance,
-        });
-        showSuccessMessageAndNavigateBack();
-      } catch (e) {
-        print('Error: $e');
-      }
-    }
-  }
-
-  void showSuccessMessageAndNavigateBack() {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('User added successfully!'),
-    ));
-
-    nameController.clear();
-    emailController.clear();
-    accountNumberController.clear();
-    pinController.clear();
-    balanceController.clear();
-
-    Navigator.of(context).pop();
   }
 }

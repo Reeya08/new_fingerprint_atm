@@ -1,21 +1,21 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:new_fingerprint_atm/infrastructure/services/auth_services.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Authentication
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:new_fingerprint_atm/infrastructure/models/user_model.dart';
+import 'package:new_fingerprint_atm/infrastructure/services/user_services.dart';
 import '../home/home_view.dart';
 
-class PinInPutScreen extends StatefulWidget {
-  const PinInPutScreen({Key? key});
+class PinInputScreen extends StatefulWidget {
+  const PinInputScreen({Key? key}) : super(key: key);
 
   @override
-  State<PinInPutScreen> createState() => _PinInPutScreenState();
+  State<PinInputScreen> createState() => _PinInputScreenState();
 }
 
-class _PinInPutScreenState extends State<PinInPutScreen> {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController pinController = TextEditingController();
+class _PinInputScreenState extends State<PinInputScreen> {
+  final TextEditingController atmPinController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-
   final OutlineInputBorder textInputBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(18.0),
     borderSide: BorderSide(color: Color(0xff394867), width: 1),
@@ -25,7 +25,7 @@ class _PinInPutScreenState extends State<PinInPutScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Enter Email and PIN'),
+        title: Text('Enter your 4 digit PIN'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -36,27 +36,9 @@ class _PinInPutScreenState extends State<PinInPutScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               TextFormField(
-                controller: emailController,
+                controller: atmPinController,
                 decoration: InputDecoration(
-                  labelText: 'Email',
-                  enabledBorder: textInputBorder,
-                  focusedBorder: textInputBorder,
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!isEmail(value)) {
-                    return 'Invalid email address';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 10),
-              TextFormField(
-                controller: pinController,
-                decoration: InputDecoration(
-                  labelText: 'PIN (4 digits)',
+                  labelText: 'ATM PIN (4 digits)',
                   enabledBorder: textInputBorder,
                   focusedBorder: textInputBorder,
                 ),
@@ -70,21 +52,44 @@ class _PinInPutScreenState extends State<PinInPutScreen> {
                   }
                   return null;
                 },
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(4),
+                ],
               ),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    final email = emailController.text;
-                    final pin = pinController.text;
-                    AuthServices().loginUser(email: email, pin: pin).then((value) {
-                      emailController.clear();
-                      pinController.clear();
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen()));
-                    });
-                  }
-                },
+                  onPressed: () async {
+                    if (_formKey.currentState!.validate()) {
+                      String enteredPin = atmPinController.text;
+                      final User? user = FirebaseAuth.instance.currentUser;
+
+                      if (user != null) {
+                        // Use the current user's ID to fetch their data from Firestore
+                        String currentUserId = user.uid;
+                        UserServices userServices = UserServices();
+                        UserModel currentUser = await userServices.getUserData(currentUserId);
+
+                        if (enteredPin == currentUser.pin) {
+                          // PINs match, navigate to the next screen
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => HomeScreen()));
+                        } else {
+                          // PINs do not match, show an error message
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text('PIN does not match. Please try again.'),
+                          ));
+                        }
+                      } else {
+                        // User not authenticated
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('User not authenticated. Please log in.'),
+                        ));
+                      }
+                    }
+                  },
                 child: Text('Submit'),
               ),
             ],
@@ -92,16 +97,6 @@ class _PinInPutScreenState extends State<PinInPutScreen> {
         ),
       ),
     );
-  }
-
-  bool isEmail(String? value) {
-    if (value == null) {
-      return false;
-    }
-    // You can add more email validation logic here if needed
-    // For a simple check, you can use a regular expression pattern.
-    final emailPattern = RegExp(r'^[\w-]+(\.[\w-]+)*@[\w-]+(\.[\w-]+)+$');
-    return emailPattern.hasMatch(value);
   }
 
   bool isNumeric(String? value) {

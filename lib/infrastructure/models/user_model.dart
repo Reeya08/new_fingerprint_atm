@@ -1,8 +1,18 @@
+import 'dart:convert';
+import 'dart:ffi';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+UserModel transactionModelFromJson(String str) =>
+    UserModel.fromJson(json.decode(str));
+
+String transactionModelToJson(UserModel data) =>
+    json.encode(data.toJson());
 class UserModel {
   String? userId;
+  String?  pin;
   String? name;
   String? accountNumber;
-  String? pin;
   String? balance;
   String? email;  // Add the email field
   bool blocked;
@@ -27,13 +37,14 @@ class UserModel {
     blocked: json['blocked'] ?? false,
   );
 
+
   Map<String, dynamic> toJson() => {
     "user_id": userId,
     "name": name,
     "account_number": accountNumber,
     "pin": pin,
     "balance": balance,
-    'email': email,  // Include the email field in the JSON representation
+    'email': email,// Include the email field in the JSON representation
     'blocked': blocked,
   };
 }

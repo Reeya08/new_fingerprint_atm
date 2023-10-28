@@ -41,12 +41,12 @@ class HomeScreen extends StatelessWidget {
                   );
                 },
               ),
-
+              SizedBox(width: 20),
               OptionButton(
                 title: 'Balance Inquiry',
                 icon: Icons.account_balance,
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => BalanceInquiryScreen(accountBalance: 70000000,)));
+                  Navigator.push(context,   MaterialPageRoute(builder: (context) => BalanceInquiryScreen(accountBalance: 70000000,)));
                 },
               ),
               OptionButton(
@@ -57,6 +57,13 @@ class HomeScreen extends StatelessWidget {
                 },
               ),
               SizedBox(height: 20),
+              OptionButton(
+                title: 'Change Pin',
+                icon: Icons.pinch,
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => CashTransferScreen()));
+                },
+              ),
             ],
           ),
         ),

@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:new_fingerprint_atm/presentation/views/biometric/biometric_verification_view.dart';
 import 'package:new_fingerprint_atm/presentation/views/login/login_view.dart';
-
 class SplashView extends StatefulWidget {
   const SplashView({Key? key}) : super(key: key);
 

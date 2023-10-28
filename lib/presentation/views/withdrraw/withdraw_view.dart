@@ -1,166 +1,283 @@
+ import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../../../infrastructure/models/transaction_model.dart';
+import '../home/home_view.dart';
 
-import '../../../infrastructure/models/user_model.dart';
 
-class WithdrawScreen extends StatefulWidget {
-  @override
-  _WithdrawScreenState createState() => _WithdrawScreenState();
-}
 
-class _WithdrawScreenState extends State<WithdrawScreen> {
-  final TextEditingController withdrawalAmountController = TextEditingController();
-  UserModel? currentUser;
-  String? withdrawalMessage;
 
-  @override
-  void initState() {
-    super.initState();
-    // Simulate fetching the current user data from a data source
-    fetchCurrentUser();
+  class WithdrawScreen extends StatefulWidget {
+    @override
+    _WithdrawScreenState createState() => _WithdrawScreenState();
   }
 
-  void fetchCurrentUser() {
-    // Simulated user data for demonstration
-    currentUser = UserModel(
-      userId: '123456',
-      name: 'John Doe',
-      accountNumber: '7890123456',
-      pin: '1234',
-      balance: '1000.0',
-      blocked: false,
-    );
-  }
+  class _WithdrawScreenState extends State<WithdrawScreen> {
+    final TextEditingController withdrawalAmountController = TextEditingController();
+    String? withdrawalMessage;
 
-  void withdrawCash() {
-    if (currentUser == null) {
-      // User data is not available, handle this case.
-      return;
-    }
-
-    final double withdrawalAmount =
-        double.tryParse(withdrawalAmountController.text) ?? 0.0;
-
-    if (withdrawalAmount <= 0) {
-      // Withdrawal amount is not valid
-      setState(() {
-        withdrawalMessage = 'Invalid withdrawal amount.';
-      });
-      return;
-    }
-
-    final double currentBalance = double.parse(currentUser!.balance ?? '0.0');
-
-    if (withdrawalAmount > currentBalance) {
-      // Withdrawal amount is greater than the available balance
-      setState(() {
-        withdrawalMessage = 'Insufficient balance.';
-      });
-      return;
-    }
-
-    // Update the user's balance
-    final updatedBalance = (currentBalance - withdrawalAmount).toString();
-    currentUser!.balance = updatedBalance;
-
-    // Simulate updating the user data in a data source
-    // In a real app, replace this with actual data update logic.
-    updateUserData(currentUser!);
-
-    setState(() {
-      withdrawalMessage = 'Withdrawal successful!';
-    });
-
-    // Navigate back to the home screen
-    // Add your navigation logic here
-    // For simplicity, we'll use Navigator.pop to return to the previous screen
-    Future.delayed(Duration(seconds: 2), () {
-      Navigator.pop(context, true);
-    });
-  }
-
-  void updateUserData(UserModel user) {
-    // Simulated update of user data
-    // In a real app, replace this with actual data update logic.
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Withdraw Cash'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'Enter Withdrawal Amount:',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 20),
-            TextField(
-              controller: withdrawalAmountController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                hintText: 'Amount',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18.0),
-                  borderSide: BorderSide(
-                    color: Color(0xff394867),
-                    width: 1,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18.0),
-                  borderSide: BorderSide(
-                    color: Color(0xff394867),
-                    width: 1,
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: 20),
-            Container(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: withdrawCash,
-                style: ElevatedButton.styleFrom(
-                  primary: Color(0xff394867),
-                  onPrimary: Colors.white,
-                  padding: EdgeInsets.all(12.0),
-                ),
-                child: Text(
-                  'Withdraw',
-                  style: TextStyle(fontSize: 16.0),
-                ),
-              ),
-            ),
-            if (withdrawalMessage != null)
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  withdrawalMessage!,
-                  style: TextStyle(
-                    color: withdrawalMessage == 'Withdrawal successful!'
-                        ? Colors.green
-                        : Colors.red,
-                  ),
-                ),
-              ),
-          ],
+    @override
+    Widget build(BuildContext context) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Withdraw Cash'),
         ),
-      ),
-    );
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              Text(
+                'Enter Withdrawal Amount:',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 20),
+              // Row of default amount buttons
+              Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: <Widget>[
+                      ElevatedButton(
+                        onPressed: () {
+                          setWithdrawalAmount(1000);
+                        },
+                        child: Text('1000'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          setWithdrawalAmount(3000);
+                        },
+                        child: Text('3000'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          setWithdrawalAmount(4000);
+                        },
+                        child: Text('4000'),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: <Widget>[
+                      ElevatedButton(
+                        onPressed: () {
+                          setWithdrawalAmount(2000);
+                        },
+                        child: Text('2000'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          setWithdrawalAmount(5000);
+                        },
+                        child: Text('5000'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          setWithdrawalAmount(10000);
+                        },
+                        child: Text('10000'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+              Text('OR', style: TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(height: 10),
+              // Custom amount input field
+              TextField(
+                controller: withdrawalAmountController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: 'Enter other amount',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18.0),
+                    borderSide: BorderSide(
+                      color: Color(0xff394867),
+                      width: 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18.0),
+                    borderSide: BorderSide(
+                      color: Color(0xff394867),
+                      width: 1,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+              Container(
+                width: double.infinity,
+                child: ElevatedButton(
+                 onPressed: (){
+                   withdrawCash().then((value) {
+                     final snackbar = SnackBar(content: Text("Transaction Successfull"));
+                     ScaffoldMessenger.of(context).showSnackBar(snackbar);
+                   })..then((value){
+                     Navigator.push(context, MaterialPageRoute(builder: (context)=>HomeScreen()));
+                   }).onError((error, stackTrace) {
+                     Text(error.toString());
+                   });
+                 },
+                  style: ElevatedButton.styleFrom(
+                    primary: Color(0xff394867),
+                    onPrimary: Colors.white,
+                    padding: EdgeInsets.all(12.0),
+                  ),
+                  child: Text(
+                    'Withdraw',
+                    style: TextStyle(fontSize: 16.0),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
   }
+    // void withdrawFunds() async {
+    //   String enteredAmount = withdrawalAmountController.text;
+    //   final User? user = FirebaseAuth.instance.currentUser;
+    //
+    //   if (user != null) {
+    //     // Use the current user's ID to fetch their data from Firestore
+    //     String currentUserId = user.uid;
+    //     UserServices userServices = UserServices();
+    //     UserModel currentUser = await userServices.getUserData(currentUserId);
+    //
+    //     // Convert the entered amount to a double
+    //     double withdrawalAmount = double.tryParse(enteredAmount) ?? 0.0;
+    //
+    //     if (withdrawalAmount <= 0) {
+    //       // Display an error message for an invalid amount
+    //       setState(() {
+    //         withdrawalMessage = 'Invalid withdrawal amount. Please enter a valid amount.';
+    //       });
+    //     } else if (currentUser != null && currentUser.balance != null) {
+    //       if (withdrawalAmount > currentUser.balance!) {
+    //         // Display an error message if the withdrawal amount is greater than the balance
+    //         setState(() {
+    //           withdrawalMessage = 'Insufficient balance. Please enter a valid amount.';
+    //         });
+    //       } else {
+    //         // Update the user's balance by subtracting the withdrawal amount
+    //         double updatedBalance = currentUser.balance! - withdrawalAmount;
+    //
+    //         // Update the user's balance in Firestore
+    //         await userServices.updateUserBalance(balance: updatedBalance);
+    //
+    //         // Display a success message
+    //         setState(() {
+    //           withdrawalMessage = 'Withdrawal successful!';
+    //         });
+    //       }
+    //     } else {
+    //       // Handle the case where currentUser or currentUser.balance is null
+    //       setState(() {
+    //         withdrawalMessage = 'User data not available. Please try again later.';
+    //       });
+    //     }
+    //   } else {
+    //     // User not authenticated
+    //     setState(() {
+    //       withdrawalMessage = 'User not authenticated. Please log in.';
+    //     });
+    //   }
+    // }
+    Future<void> withdrawCash() async {
+      final withdrawalAmountText = withdrawalAmountController.text;
+      if (withdrawalAmountText.isEmpty) {
+        setState(() {
+          withdrawalMessage = 'Please enter an amount.';
+        });
+        return;
+      }
 
-  @override
-  void dispose() {
-    withdrawalAmountController.dispose();
-    super.dispose();
+      final withdrawalAmount = double.tryParse(withdrawalAmountText);
+      if (withdrawalAmount == null || withdrawalAmount <= 0) {
+        setState(() {
+          withdrawalMessage = 'Invalid amount.';
+        });
+        return;
+      }
+
+      if (withdrawalAmount < 500 || withdrawalAmount > 50000) {
+        setState(() {
+          withdrawalMessage = 'Withdrawal amount must be between 500 and 50000.';
+        });
+        return;
+      }
+
+      final User? user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        final userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
+        final userSnapshot = await userDoc.get();
+        final userData = userSnapshot.data();
+
+        if (userData == null || !userData.containsKey('balance')) {
+          setState(() {
+            withdrawalMessage = 'User balance not found.';
+          });
+          return;
+        }
+
+        final double currentBalance = userData['balance'];
+        if (withdrawalAmount > currentBalance) {
+          setState(() {
+            withdrawalMessage = 'Insufficient balance.';
+          });
+          return;
+        }
+
+        try {
+          await FirebaseFirestore.instance.runTransaction((transaction) async {
+            // Update user's balance
+            final newBalance = currentBalance - withdrawalAmount;
+            transaction.update(userDoc, {'balance': newBalance});
+
+            // Create a transaction record
+            final transactionData = TransactionModel(
+              userId: user.uid,
+              amount: withdrawalAmount,
+            );
+
+            // Get a reference to the 'transactions' collection and add the transaction
+            final transactionCollection =
+            FirebaseFirestore.instance.collection('transactions');
+            await transactionCollection.add(transactionData.toJson());
+
+            // Update the withdrawal message
+            setState(() {
+              withdrawalMessage = 'Withdrawal successful!';
+            });
+          });
+        } catch (e) {
+          // Handle any errors that might occur during the transaction
+          setState(() {
+            withdrawalMessage = 'An error occurred: $e';
+          });
+        }
+      } else {
+        // User not authenticated
+        setState(() {
+          withdrawalMessage = 'User not authenticated. Please log in.';
+        });
+      }
+    }
+    void setWithdrawalAmount(double amount) {
+      withdrawalAmountController.text = amount.toString();
+    }
+    @override
+    void dispose() {
+      withdrawalAmountController.dispose();
+      super.dispose();
+    }
   }
-}

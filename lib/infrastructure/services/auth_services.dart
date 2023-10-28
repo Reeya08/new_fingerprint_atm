@@ -20,32 +20,11 @@ class AuthServices {
   Future<void> signOut() {
     return FirebaseAuth.instance.signOut();
   }
-  Future<UserCredential?> loginUser({
-    required String email, // Use email for login
-    required String pin,
-  }) async {
-    try {
-      // Retrieve the user by email
-      final user = await fetchUserByEmail(email);
-
-      if (user != null) {
-        // Validate the PIN
-        if (user.pin == pin) {
-          // If the PIN is correct, sign in the user
-          return await FirebaseAuth.instance.signInAnonymously();
-        }
-      }
-
-      // Return null if login is unsuccessful (wrong email or PIN)
-      return null;
-    } catch (e) {
-      // Handle errors, e.g., user not found, authentication failure, etc.
-      print("Login failed: $e");
-      return null;
-    }
-
+  Future<UserCredential> loginUser(
+      {required String email, required String password}) {
+    return FirebaseAuth.instance
+        .signInWithEmailAndPassword(email: email, password: password);
   }
-
   Future<UserModel?> fetchUserByEmail(String email) async {
     try {
       final usersCollection = FirebaseFirestore.instance.collection('users');
@@ -59,7 +38,6 @@ class AuthServices {
         final userData = userSnapshot.docs.first.data() as Map<String, dynamic>;
         return UserModel.fromJson(userData);
       }
-
       // Return null if no user is found with the specified email.
       return null;
     } catch (e) {
