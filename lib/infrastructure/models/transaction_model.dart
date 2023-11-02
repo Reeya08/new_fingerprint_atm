@@ -1,29 +1,30 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TransactionModel {
-  String? transactionId;
-  String? userId; // Store the user's ID as a string
-  double? amount;
-  Timestamp? date;
+  final String userId;
+  final double amount;
+  final Timestamp date;
+  final String accountNumber; // Add this field
 
   TransactionModel({
-    this.transactionId,
-    this.userId,
-    this.amount,
-    this.date,
+    required this.userId,
+    required this.amount,
+    required this.date,
+    required this.accountNumber,
   });
-
   factory TransactionModel.fromJson(Map<String, dynamic> json) => TransactionModel(
-    transactionId: json["transaction_id"],
     userId: json["user_id"],
+    accountNumber: json["accountNumber"],
     amount: json["amount"],
     date: json["date"],
   );
-
-  Map<String, dynamic> toJson() => {
-    "transaction_id": transactionId,
-    "user_id": userId, // Save the user's ID
-    "amount": amount,
-    "date": Timestamp.now(),
-  };
+  Map<String, dynamic> toJson() {
+    return {
+      'userId': userId,
+      'amount': amount,
+      'date': date,
+      'accountNumber': accountNumber,
+    };
+  }
 }
+

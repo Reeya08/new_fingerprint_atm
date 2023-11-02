@@ -29,13 +29,39 @@ class UserServices {
   }
 
 
+  // Future<UserModel> getUserData(String userId) async {
+  //   try {
+  //     DocumentSnapshot userSnapshot = await _firestore.collection('users').doc(userId).get();
+  //
+  //     if (userSnapshot.exists) {
+  //       // Convert the Firestore data to a UserModel object ]
+  //       UserModel user = UserModel.fromJson(userSnapshot.data() as Map<String, dynamic>);
+  //       return user;
+  //     } else {
+  //       // Handle the case where the user document doesn't exist.
+  //       throw Exception("User not found");
+  //     }
+  //   } catch (e) {
+  //     // Handle any errors that occur during the process.
+  //     print("Error getting user data: $e");
+  //     throw e;
+  //   }
+  // }
   Future<UserModel> getUserData(String userId) async {
     try {
       DocumentSnapshot userSnapshot = await _firestore.collection('users').doc(userId).get();
 
       if (userSnapshot.exists) {
-        // Convert the Firestore data to a UserModel object ]
-        UserModel user = UserModel.fromJson(userSnapshot.data() as Map<String, dynamic>);
+        // Get the Firestore data as a Map
+        Map<String, dynamic> userData = userSnapshot.data() as Map<String, dynamic>;
+
+        // Convert the "balance" field to a double
+        double? balance = userData['balance']?.toDouble();
+
+        // Create the UserModel object with the updated balance field
+        UserModel user = UserModel.fromJson(userData);
+        user.balance = balance;
+
         return user;
       } else {
         // Handle the case where the user document doesn't exist.
@@ -47,23 +73,9 @@ class UserServices {
       throw e;
     }
   }
-  //
-  // Future<UserModel> getUserData(String userId) async {
-  //   try {
-  //     DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
-  //
-  //     if (userDoc.exists) {
-  //       String userId = userDoc['userId'];
-  //       String pin = userDoc['pin'];
-  //
-  //       return UserModel(userId: userId, pin: pin);
-  //     } else {
-  //       throw Exception("User not found");
-  //     }
-  //   } catch (e) {
-  //     throw e;
-  //   }
-  // }
+
+
+
 
   Future updateUserBalance({required double balance}) async {
     return await FirebaseFirestore.instance

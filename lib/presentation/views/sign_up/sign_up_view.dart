@@ -26,17 +26,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   final OutlineInputBorder textInputBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(18.0),
-    borderSide: BorderSide(color: Color(0xff394867), width: 1),
+    borderSide: const BorderSide(color: Color(0xff394867), width: 1),
   );
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Sign Up'),
+        title: const Text('Sign Up'),
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -58,7 +58,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     return null;
                   },
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 10,
                 ),
                 TextFormField(
@@ -78,7 +78,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     return null;
                   },
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 10,
                 ),
                 TextFormField(
@@ -102,7 +102,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     LengthLimitingTextInputFormatter(14),
                   ],
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 10,
                 ),
                 TextFormField(
@@ -124,7 +124,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   },
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 10,
                 ),
                 TextFormField(
@@ -149,7 +149,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     LengthLimitingTextInputFormatter(4),
                   ],
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 10,
                 ),
                 TextFormField(
@@ -167,15 +167,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     return null;
                   },
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 10,
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 Container(
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xff394867),
+                      backgroundColor: const Color(0xff394867),
                       onPrimary: Colors.white,
                     ),
                     onPressed: () {
@@ -186,16 +186,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           password: loginPasswordController.text,
                         )
                             .then((UserCredential userCredential) {
-                          User? user = userCredential
-                              .user; // Make sure you define 'User' here
-
+                          User? user = userCredential.user; // Make sure you define 'User' here
                           if (user != null) {
                             UserModel userModel = UserModel(
                               userId: user.uid,
-                              pin: atmPinController.text,
+                              pin: int.parse(atmPinController.text),
                               name: nameController.text,
                               accountNumber: accountNumberController.text,
-                              balance: balanceController.text,
+                              balance: double.parse(balanceController.text),
                               email: emailController.text,
                               blocked: false,
                             );
@@ -217,7 +215,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 loginPasswordController.clear();
                                 FocusManager.instance.primaryFocus!.unfocus();
                                 return AlertDialog(
-                                  content: Text('Sign Up Successfully'),
+                                  content: const Text('Sign Up Successfully'),
                                   actions: [
                                     ElevatedButton(
                                       onPressed: () {
@@ -225,9 +223,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                             context,
                                             MaterialPageRoute(
                                                 builder: (context) =>
-                                                    LoginView()));
+                                                    const LoginView()));
                                       },
-                                      child: Text("oK"),
+                                      child: const Text("oK"),
                                     ),
                                   ],
                                 );
@@ -249,7 +247,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         });
                       }
                     },
-                    child: Text('Sign Up'),
+                    child: const Text('Sign Up'),
                   ),
                 ),
               ],

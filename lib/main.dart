@@ -1,16 +1,16 @@
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:new_fingerprint_atm/presentation/views/splash/splash_view.dart';
-
 import 'firebase_options.dart';
-
 Future<void> main() async {
+  // WidgetsFlutterBinding.ensureInitialized();
+  // Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   WidgetsFlutterBinding.ensureInitialized();
-   Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -28,4 +28,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

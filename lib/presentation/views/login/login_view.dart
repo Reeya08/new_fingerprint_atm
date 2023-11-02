@@ -1,10 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:new_fingerprint_atm/presentation/views/home/home_view.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:new_fingerprint_atm/presentation/views/pin_input/pin_input_view.dart';
 import 'package:new_fingerprint_atm/presentation/views/sign_up/sign_up_view.dart';
-import 'package:flutter/material.dart';
-import 'package:local_auth/local_auth.dart';
 
 import '../../../infrastructure/preferences/store_account_number_and_pin.dart';
 
@@ -14,8 +13,44 @@ class LoginView extends StatefulWidget {
   @override
   State<LoginView> createState() => _LoginViewState();
 }
+
 class _LoginViewState extends State<LoginView> {
   final LocalAuthentication _localAuthentication = LocalAuthentication();
+
+
+  Future<void> _showExitConfirmationDialog(BuildContext context) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Exit Confirmation'),
+          content: const Text('Are you sure you want to exit the app?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(false); // Return false to cancel the exit.
+              },
+            ),
+            TextButton(
+              child: const Text('Exit'),
+              onPressed: () {
+                Navigator.of(context).pop(true); // Return true to confirm the exit.
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null && result) {
+      SystemNavigator.pop(); // This will exit the app.
+    } else if (result != null) {
+      // Handle other actions if needed
+    } else {
+      throw Exception('Exit confirmation dialog dismissed');
+    }
+  }
 
   Future<void> authenticateUser() async {
     bool authenticated = false;
@@ -29,7 +64,9 @@ class _LoginViewState extends State<LoginView> {
     }
 
     if (authenticated) {
-      final snackBar = SnackBar(content: Text("Authentication Successful"));
+      final snackBar = SnackBar(
+          backgroundColor: Color(0xff9BA4B5),
+          content: Text("Authentication Successful"));
       ScaffoldMessenger.of(context).showSnackBar(snackBar);
 
       // Retrieve user email and password from shared preferences
@@ -45,18 +82,25 @@ class _LoginViewState extends State<LoginView> {
           );
 
           // If authentication is successful, navigate to the PinInputScreen
-          Navigator.push(context, MaterialPageRoute(builder: (context) => PinInputScreen()));
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => PinInputScreen()));
         } catch (e) {
-          final snackBar = SnackBar(content: Text("Authentication failed: $e"));
+          final snackBar = SnackBar(
+              backgroundColor: Color(0xff9BA4B5),
+              content: Text("Authentication failed: $e"));
           ScaffoldMessenger.of(context).showSnackBar(snackBar);
         }
       } else {
         // Handle the case where email and password are not found in shared preferences
-        final snackBar = SnackBar(content: Text("User data not found"));
+        final snackBar = SnackBar(
+            backgroundColor: Color(0xff9BA4B5),
+            content: Text("User data not found"));
         ScaffoldMessenger.of(context).showSnackBar(snackBar);
       }
     } else {
-      final snackbar = SnackBar(content: Text("Authentication failed"));
+      final snackbar = SnackBar(
+          backgroundColor: Color(0xff9BA4B5),
+          content: Text("Authentication failed"));
       ScaffoldMessenger.of(context).showSnackBar(snackbar);
     }
   }
