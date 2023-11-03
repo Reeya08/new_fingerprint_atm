@@ -28,25 +28,6 @@ class UserServices {
             (userData) => UserModel.fromJson(userData as Map<String, dynamic>));
   }
 
-
-  // Future<UserModel> getUserData(String userId) async {
-  //   try {
-  //     DocumentSnapshot userSnapshot = await _firestore.collection('users').doc(userId).get();
-  //
-  //     if (userSnapshot.exists) {
-  //       // Convert the Firestore data to a UserModel object ]
-  //       UserModel user = UserModel.fromJson(userSnapshot.data() as Map<String, dynamic>);
-  //       return user;
-  //     } else {
-  //       // Handle the case where the user document doesn't exist.
-  //       throw Exception("User not found");
-  //     }
-  //   } catch (e) {
-  //     // Handle any errors that occur during the process.
-  //     print("Error getting user data: $e");
-  //     throw e;
-  //   }
-  // }
   Future<UserModel> getUserData(String userId) async {
     try {
       DocumentSnapshot userSnapshot = await _firestore.collection('users').doc(userId).get();
@@ -73,10 +54,6 @@ class UserServices {
       throw e;
     }
   }
-
-
-
-
   Future updateUserBalance({required double balance}) async {
     return await FirebaseFirestore.instance
         .collection('users')

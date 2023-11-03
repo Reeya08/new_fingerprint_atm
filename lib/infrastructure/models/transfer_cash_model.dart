@@ -1,33 +1,37 @@
-  import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-  class TransferCashModel {
-    String? transactionId;
-    String? accountNumber;
-    String? userId; // Store the user's ID as a string
-    double? amount;
-    Timestamp? date;
+class CashTransfer {
+  final String userId;
+  final String sourceAccountNumber;
+  final String destinationAccountNumber;
+  final double transferAmount;
+  final DateTime transferDate;
 
-    TransferCashModel({
-      this.transactionId,
-      this.userId,
-      this.accountNumber,
-      this.amount,
-      this.date,
-    });
+  CashTransfer({
+    required this.userId,
+    required this.sourceAccountNumber,
+    required this.destinationAccountNumber,
+    required this.transferAmount,
+    required this.transferDate,
+  });
 
-    factory TransferCashModel.fromJson(Map<String, dynamic> json) => TransferCashModel(
-      transactionId: json["transaction_id"],
-      userId: json["user_id"],
-      accountNumber: json["accountNumber"],
-      amount: json["amount"],
-      date: json["date"],
-    );
-
-    Map<String, dynamic> toJson() => {
-      "transaction_id": transactionId,
-      "user_id": userId,
-      "accountNumber": accountNumber,// Save the user's ID
-      "amount": amount,
-      "date": Timestamp.now(),
+  Map<String, dynamic> toJson() {
+    return {
+      'userId': userId,
+      'sourceAccountNumber': sourceAccountNumber,
+      'destinationAccountNumber': destinationAccountNumber,
+      'transferAmount': transferAmount,
+      'transferDate': transferDate,
     };
   }
+
+  factory CashTransfer.fromMap(Map<String, dynamic> map) {
+    return CashTransfer(
+      userId: map['userId'],
+      sourceAccountNumber: map['sourceAccountNumber'],
+      destinationAccountNumber: map['destinationAccountNumber'],
+      transferAmount: map['transferAmount'],
+      transferDate: (map['transferDate'] as Timestamp).toDate(),
+    );
+  }
+}

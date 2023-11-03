@@ -6,6 +6,8 @@ import 'package:local_auth/local_auth.dart';
 import 'package:new_fingerprint_atm/presentation/views/home/home_view.dart';
 import '../../../infrastructure/models/transaction_model.dart';
 import '../../../infrastructure/preferences/store_account_number_and_pin.dart';
+import '../balance_inquiry/balance_inquiry_view.dart';
+
 class WithdrawScreen extends StatefulWidget {
   @override
   _WithdrawScreenState createState() => _WithdrawScreenState();
@@ -15,6 +17,57 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
   final TextEditingController withdrawalAmountController = TextEditingController();
   String? withdrawalMessage;
   final LocalAuthentication _localAuthentication = LocalAuthentication();
+
+  // Function to show the transaction details bottom sheet
+  void showTransactionDetailsBottomSheet(String accountNumber, double amount, DateTime time) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              Text('Transaction Details',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 10),
+              Text('From Account: $accountNumber'),
+              Text('Amount Withdrawn: $amount'),
+              Text('Time: $time'),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  // Navigate to the balance inquiry screen
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => BalanceInquiryScreen()));
+                },
+                style: ElevatedButton.styleFrom(
+                  primary: Color(0xff394867),
+                  onPrimary: Colors.white,
+                  padding: EdgeInsets.all(12.0),
+                ),
+                child: Text('Check Balance'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close the bottom sheet
+                },
+                style: ElevatedButton.styleFrom(
+                  primary: Color(0xff394867),
+                  onPrimary: Colors.white,
+                  padding: EdgeInsets.all(12.0),
+                ),
+                child: Text('Close'),
+              ),
+
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> authenticateUser() async {
     bool authenticated = false;
 
@@ -46,15 +99,13 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
 
           // If authentication is successful, navigate to the PinInputScreen
           withdrawCash();
-          Navigator.push(context,
-              MaterialPageRoute(builder: (context) => HomeScreen()));
+          Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen()));
         } catch (e) {
           final snackBar = SnackBar(
               backgroundColor: Color(0xff9BA4B5),
               content: Text("Authentication failed: $e"));
           ScaffoldMessenger.of(context).showSnackBar(snackBar);
-          Navigator.push(context,
-              MaterialPageRoute(builder: (context) => WithdrawScreen()));
+          Navigator.push(context, MaterialPageRoute(builder: (context) => WithdrawScreen()));
         }
       } else {
         // Handle the case where email and password are not found in shared preferences
@@ -62,18 +113,17 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
             backgroundColor: Color(0xff9BA4B5),
             content: Text("User data not found"));
         ScaffoldMessenger.of(context).showSnackBar(snackBar);
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => WithdrawScreen()));
+        Navigator.push(context, MaterialPageRoute(builder: (context) => WithdrawScreen()));
       }
     } else {
       final snackbar = SnackBar(
           backgroundColor: Color(0xff9BA4B5),
           content: Text("Authentication failed"));
       ScaffoldMessenger.of(context).showSnackBar(snackbar);
-      Navigator.push(context,
-          MaterialPageRoute(builder: (context) => WithdrawScreen()));
+      Navigator.push(context, MaterialPageRoute(builder: (context) => WithdrawScreen()));
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -233,54 +283,71 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
     if (user != null) {
       final userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
       final userSnapshot = await userDoc.get();
-      final userData = userSnapshot.data();
 
-      if (userData == null || !userData.containsKey('balance')) {
-        setState(() {
-          withdrawalMessage = 'User balance not found.';
-        });
-        return;
-      }
+      if (userSnapshot.exists) {
+        final userData = userSnapshot.data();
 
-      final double currentBalance = userData['balance'] ?? 0;
-      final String userAccountNumber = userData['accountNumber'] ?? '';
+        if (userData != null) {
+          final double currentBalance = userData['balance'] ?? 0;
+          final String userAccountNumber = userData['account_number'] ?? '';
 
-      if (withdrawalAmount > currentBalance) {
-        setState(() {
-          withdrawalMessage = 'Insufficient balance.';
-        });
-        return;
-      }
+          if (userAccountNumber.isEmpty) {
+            setState(() {
+              withdrawalMessage = 'User account number is empty.';
+            });
+            return;
+          }
 
-      try {
-        await FirebaseFirestore.instance.runTransaction((transaction) async {
-          // Update user's balance
-          final newBalance = currentBalance - withdrawalAmount;
-          transaction.update(userDoc, {'balance': newBalance});
+          if (withdrawalAmount > currentBalance) {
+            setState(() {
+              withdrawalMessage = 'Insufficient balance.';
+            });
+            return;
+          }
 
-          // Create a transaction record
-          final transactionData = TransactionModel(
-            userId: user.uid,
-            amount: withdrawalAmount,
-            date: Timestamp.now(),
-            accountNumber: userAccountNumber,
-          );
+          try {
+            await FirebaseFirestore.instance.runTransaction((transaction) async {
+              // Update user's balance
+              final newBalance = currentBalance - withdrawalAmount;
+              transaction.update(userDoc, {'balance': newBalance});
+              // Create a transaction record
+              final transactionData = TransactionModel(
+                userId: user.uid,
+                amount: withdrawalAmount,
+                date: Timestamp.now(),
+                accountNumber: userAccountNumber,
+              );
 
-          // Get a reference to the 'transactions' collection and add the transaction
-          final transactionCollection = FirebaseFirestore.instance.collection('transactions');
-          final transactionDocRef = await transactionCollection.add(transactionData.toJson());
+              // Get a reference to the 'transactions' collection and add the transaction
+              final transactionCollection = FirebaseFirestore.instance.collection('transactions');
+              final transactionDocRef = await transactionCollection.add(transactionData.toJson());
 
-          // Retrieve the Firestore document ID for the transaction
-          final transactionDocId = transactionDocRef.id;
+              // Retrieve the Firestore document ID for the transaction
+              final transactionDocId = transactionDocRef.id;
 
-          // Update the withdrawal message
+              // Update the withdrawal message
+              setState(() {
+                withdrawalMessage = 'Withdrawal successful! Transaction ID: $transactionDocId';
+              });
+
+              // Show the transaction details in a bottom sheet
+              showTransactionDetailsBottomSheet(userAccountNumber, withdrawalAmount, DateTime.now());
+            });
+          } catch (e) {
+            setState(() {
+              withdrawalMessage = 'An error occurred: $e';
+            });
+          }
+        } else {
+          // User data is null
           setState(() {
-            withdrawalMessage = 'Withdrawal successful! Transaction ID: $transactionDocId';
+            withdrawalMessage = 'User data not found.';
           });
-        });
-      } catch (e) {
+        }
+      } else {
+        // User document does not exist
         setState(() {
-          withdrawalMessage = 'An error occurred: $e';
+          withdrawalMessage = 'User document not found.';
         });
       }
     } else {
@@ -290,9 +357,11 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
       });
     }
   }
+
   void setWithdrawalAmount(double amount) {
     withdrawalAmountController.text = amount.toString();
   }
+
   @override
   void dispose() {
     withdrawalAmountController.dispose();
